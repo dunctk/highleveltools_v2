@@ -1,0 +1,14 @@
+django==5.0.1
+django-extensions
+python-dotenv
+activecampaign-python
+pandas
+print-color
+requests-cache
+tqdm
+gunicorn
+aiohttp
+requests-cache
+ratelimit
+tenacity
+requests-ratelimiter
