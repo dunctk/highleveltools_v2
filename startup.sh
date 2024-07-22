@@ -3,6 +3,9 @@
 # Run migrations
 python manage.py migrate
 
+# Ensure default admin user exists
+python manage.py ensure_admin_user
+
 # Set up cron job
 echo "0 10 * * * /usr/local/bin/python /app/manage.py runscript sync" | crontab -
 
