@@ -334,7 +334,7 @@ def get_contact_from_highlevel(contact_id):
         return None
 
 
-def run(test_mode=True):
+def run(test_mode=False):
     """
     Run the sync process. If test_mode is True, only process a small batch of contacts
     and provide more detailed logging.
