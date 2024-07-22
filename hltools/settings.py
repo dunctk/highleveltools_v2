@@ -26,6 +26,7 @@ SECRET_KEY = 'django-insecure-aej=-i@$$%3v0s59l)o&_q70v_1kca$h^wl13%j0bifg78xv58
 DEBUG = True
 
 ALLOWED_HOSTS = ["highleveltools.apps.innermaps.org"]
+CSRF_TRUSTED_ORIGINS = ["https://highleveltools.apps.innermaps.org"]
 
 
 # Application definition
@@ -117,7 +118,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
