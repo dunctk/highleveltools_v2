@@ -8,6 +8,8 @@ RUN apt-get update \
     # Translations dependencies
     && apt-get install -y gettext \
     && apt-get install -y libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info \
+    # cron for scheduled tasks
+    && apt-get install -y cron \
     # cleaning up unused files
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/*
@@ -24,4 +26,5 @@ COPY . /usr/src/app
  
 EXPOSE 80
  
+RUN chmod +x /usr/src/app/startup.sh
 CMD ["sh", "./startup.sh"]  
