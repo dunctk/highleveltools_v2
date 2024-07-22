@@ -16,4 +16,4 @@ echo "0 10 * * * cd /app/hltools && /usr/local/bin/python manage.py runscript sy
 service cron start
 
 # Start Gunicorn
-gunicorn --bind=0.0.0.0:80 --timeout 600 --workers=4 wsgi:application --access-logfile '-' --error-logfile '-'
+gunicorn --bind=0.0.0.0:80 --timeout 600 --workers=4 --chdir hltools hltools.wsgi --access-logfile '-' --error-logfile '-'
