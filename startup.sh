@@ -10,7 +10,7 @@ python manage.py migrate
 python manage.py ensure_admin_user
 
 # Set up cron job
-echo "0 10 * * * cd /app/hltools && /usr/local/bin/python manage.py runscript sync" | crontab -
+echo "0 0 * * * cd /app/hltools && /usr/local/bin/python manage.py runscript sync" | crontab -
 
 # Start cron service
 service cron start
