@@ -1,17 +1,3 @@
-import os
-from celery import Celery
+from .celery_config import app as celery_app
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hltools.settings')
-
-app = Celery('hltools')
-app.config_from_object('django.conf:settings', namespace='CELERY')
-app.autodiscover_tasks()
-
-def setup_periodic_tasks():
-    from sync.periodic_tasks import setup_periodic_tasks as setup_sync_tasks
-    setup_sync_tasks(app)
-
-app.on_configure.connect(setup_periodic_tasks)
-
-# This line is for making the app available to other modules
-celery_app = app
+__all__ = ('celery_app',)
