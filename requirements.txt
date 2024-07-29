@@ -75,6 +75,8 @@ frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
+greenlet==3.0.3
+    # via sqlalchemy
 gunicorn==22.0.0
     # via -r requirements.in
 idna==3.7
@@ -131,6 +133,8 @@ six==1.16.0
     #   blessed
     #   python-dateutil
     #   url-normalize
+sqlalchemy==2.0.31
+    # via -r requirements.in
 sqlparse==0.5.0
     # via django
 tenacity==8.5.0
@@ -139,6 +143,8 @@ tqdm==4.66.4
     # via -r requirements.in
 types-python-dateutil==2.9.0.20240316
     # via arrow
+typing-extensions==4.12.2
+    # via sqlalchemy
 tzdata==2024.1
     # via
     #   celery
