@@ -20,7 +20,6 @@ if [ "$APP_ENV" = 'web' ]; then
 elif [ "$APP_ENV" = 'worker' ]; then
     celery -A hltools worker -l info 
 elif [ "$APP_ENV" = 'beat' ]; then
-    python manage.py runscript init_celery_tasks                                                                          git:docker*
     celery -A hltools beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 fi
 
