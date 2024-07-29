@@ -16,3 +16,4 @@ django-q
 django-celery-results
 django-celery-beat
 celery
+whitenoise
