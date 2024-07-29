@@ -12,3 +12,7 @@ requests-cache
 ratelimit
 tenacity
 requests-ratelimiter
+django-q
+django-celery-results
+django-celery-beat
+celery
