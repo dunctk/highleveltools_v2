@@ -4,8 +4,6 @@
 cd /app/hltools
 
 
-
-
 # Conditionally start services based on APP_ENV variable
 if [ "$APP_ENV" = 'web' ]; then
     # Run migrations
@@ -23,3 +21,4 @@ elif [ "$APP_ENV" = 'beat' ]; then
     celery -A hltools beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 fi
 
+ 
