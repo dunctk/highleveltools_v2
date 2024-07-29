@@ -12,8 +12,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os
 from pathlib import Path
-# Celery App
-from .celery import celery_app
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -141,3 +139,6 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'  # Set this to your project's timezone
 
+# Add these lines at the end of the file
+from .celery import app as celery_app
+__all__ = ('celery_app',)
