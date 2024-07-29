@@ -28,11 +28,11 @@ SECRET_KEY = 'django-insecure-aej=-i@$$%3v0s59l)o&_q70v_1kca$h^wl13%j0bifg78xv58
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["highleveltools.apps.innermaps.org"]
+ALLOWED_HOSTS = ["highleveltools.apps.innermaps.org", "127.0.0.1"]
 CSRF_TRUSTED_ORIGINS = ["https://highleveltools.apps.innermaps.org"]
 
 
-# Application definition
+# Application definition 
 
 INSTALLED_APPS = [
     'django.contrib.admin',
