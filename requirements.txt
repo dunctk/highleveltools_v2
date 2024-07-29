@@ -159,5 +159,7 @@ wcwidth==0.2.13
     # via
     #   blessed
     #   prompt-toolkit
+whitenoise==6.7.0
+    # via -r requirements.in
 yarl==1.9.4
     # via aiohttp
