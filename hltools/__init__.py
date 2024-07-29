@@ -1,3 +1,3 @@
-from .celery import celery_app
+from hltools.celery import celery_app
 
 __all__ = ('celery_app',)
