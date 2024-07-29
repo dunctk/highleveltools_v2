@@ -132,9 +132,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery Configuration
-CELERY_BROKER_URL = 'django-db://'
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_BROKER_BACKEND = "db+sqlite:///celery.sqlite"
+CELERY_CACHE_BACKEND = "db+sqlite:///celery.sqlite"
+CELERY_RESULT_BACKEND = "db+sqlite:///celery.sqlite"
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
