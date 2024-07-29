@@ -7,7 +7,7 @@ app = Celery('hltools')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
-def setup_periodic_tasks():
+def setup_periodic_tasks(**kwargs):
     from sync.periodic_tasks import setup_periodic_tasks as setup_sync_tasks
     setup_sync_tasks(app)
 
