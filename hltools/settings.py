@@ -139,6 +139,3 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'  # Set this to your project's timezone
 
-# Add these lines at the end of the file
-from .celery import app as celery_app
-__all__ = ('celery_app',)
