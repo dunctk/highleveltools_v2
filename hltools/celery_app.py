@@ -28,5 +28,5 @@ def debug_task(self):
     print(f'Request: {self.request!r}')
 
 # Import and call the setup_periodic_tasks function
-from sync.periodic_tasks import setup_periodic_tasks
-setup_periodic_tasks(app)
+#from sync.periodic_tasks import setup_periodic_tasks
+#setup_periodic_tasks(app)
