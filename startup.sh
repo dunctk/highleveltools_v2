@@ -21,4 +21,4 @@ elif [ "$APP_ENV" = 'beat' ]; then
     celery -A hltools beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 fi
 
- 
+  
