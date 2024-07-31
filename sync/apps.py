@@ -5,4 +5,4 @@ class SyncConfig(AppConfig):
     name = 'sync'
 
     def ready(self):
-        pass
+        import sync.signals  # This imports the signals
