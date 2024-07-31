@@ -15,9 +15,28 @@ def setup_periodic_tasks():
         day_of_month='*',
         month_of_year='*',
     )
-    PeriodicTask.objects.get_or_create(
+    PeriodicTask.objects.update_or_create(
         name='Run sync script daily at midnight',
-        task='sync.run_sync_script',
-        crontab=schedule,
-        enabled=True,
+        defaults={
+            'task': 'sync.run_sync_script',
+            'crontab': schedule,
+            'enabled': True,
+        }
+    )
+
+    # Schedule debug_task to run every 5 minutes
+    debug_schedule, _ = CrontabSchedule.objects.get_or_create(
+        minute='*/5',
+        hour='*',
+        day_of_week='*',
+        day_of_month='*',
+        month_of_year='*',
+    )
+    PeriodicTask.objects.update_or_create(
+        name='Run debug task every 5 minutes',
+        defaults={
+            'task': 'hltools.celery_app.debug_task',
+            'crontab': debug_schedule,
+            'enabled': True,
+        }
     )

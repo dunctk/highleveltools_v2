@@ -25,8 +25,11 @@ app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @app.task(bind=True)
 def debug_task(self):
+    print("Test task run")
     print(f'Request: {self.request!r}')
 
 # Import and call the setup_periodic_tasks function
-#from sync.periodic_tasks import setup_periodic_tasks
-#setup_periodic_tasks(app)
+from django.db import connection
+if connection.connection is not None:
+    from sync.periodic_tasks import setup_periodic_tasks
+    setup_periodic_tasks()
