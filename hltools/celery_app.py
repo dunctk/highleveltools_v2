@@ -28,8 +28,8 @@ def debug_task(self):
     print("Test task run")
     print(f'Request: {self.request!r}')
 
-# Import and call the setup_periodic_tasks function
-from django.db import connection
-if connection.connection is not None:
-    from sync.periodic_tasks import setup_periodic_tasks
-    setup_periodic_tasks()
+# Import the setup_periodic_tasks function
+from sync.periodic_tasks import setup_periodic_tasks
+
+# Connect the setup_periodic_tasks function to the app.on_after_finalize signal
+app.on_after_finalize.connect(setup_periodic_tasks)

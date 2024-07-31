@@ -7,7 +7,7 @@ from django.utils import timezone
 def run_sync_script():
     call_command('runscript', 'sync')
 
-def setup_periodic_tasks():
+def setup_periodic_tasks(sender, **kwargs):
     schedule, _ = CrontabSchedule.objects.get_or_create(
         minute='0',
         hour='0',
