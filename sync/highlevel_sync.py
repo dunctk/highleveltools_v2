@@ -3,6 +3,7 @@ import requests
 from dotenv import load_dotenv
 from django.conf import settings
 from .models import Contact, ContactCustomField, CustomField
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -32,8 +33,8 @@ def check_api_connection():
 def sync_contact_to_highlevel(contact):
     """Sync a single contact to HighLevel"""
     # Check API connection first
-    if not check_api_connection():
-        return
+    #if not check_api_connection():
+    #    return
 
     headers = {
         'Authorization': f'Bearer {HL_API_KEY}',
@@ -51,7 +52,10 @@ def sync_contact_to_highlevel(contact):
     custom_fields = {}
     for ccf in ContactCustomField.objects.filter(contact=contact):
         custom_field = ccf.custom_field
+        #print(ccf.custom_field)
+        #print(ccf.value)
         custom_fields[custom_field.ac_title] = ccf.value
+    
     
     if custom_fields:
         contact_data['customFields'] = custom_fields
@@ -71,7 +75,7 @@ def sync_contact_to_highlevel(contact):
         if not contact.hl_id:
             contact.hl_id = result['contact']['id']
             contact.save()
-        print(f"Successfully synced contact: {contact.email}")
+        #print(f"Successfully synced contact: {contact.email}")
     else:
         print(f"Failed to sync contact: {contact.email}. Status code: {response.status_code}")
         print(f"Response: {response.text}")
@@ -82,7 +86,7 @@ def sync_all_contacts_to_highlevel(limit=None, test_mode=False):
     if limit:
         contacts = contacts[:limit]
     
-    for contact in contacts:
+    for contact in tqdm(contacts):
         if test_mode:
             print(f"Syncing contact to HighLevel: {contact.first_name} {contact.last_name} (ID: {contact.ac_id})")
         sync_contact_to_highlevel(contact)

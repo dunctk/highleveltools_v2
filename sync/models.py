@@ -3,6 +3,7 @@ from django.db import models
 # models.py 
 
 from django.db import models
+from django.utils import timezone
 
 class Automation(models.Model):
     name = models.CharField(max_length=400)
@@ -108,3 +109,19 @@ class Deal(models.Model):
 
     def __str__(self):
         return f"{self.title or 'Untitled Deal'} - {self.contact}"
+
+class SyncLog(models.Model):
+    start_time = models.DateTimeField(default=timezone.now)
+    end_time = models.DateTimeField(blank=True, null=True)
+    contacts_attempted = models.IntegerField(default=0)
+    contacts_synced = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='In Progress')  # e.g., 'In Progress', 'Completed', 'Failed'
+    error_message = models.TextField(blank=True, null=True)
+
+    def time_taken(self):
+        if self.end_time:
+            return self.end_time - self.start_time
+        return None
+
+    def __str__(self):
+        return f"Sync started at {self.start_time} - {self.status}"

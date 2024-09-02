@@ -13,6 +13,7 @@ import time
 from requests_ratelimiter import LimiterSession
 import logging
 from ..highlevel_sync import sync_all_contacts_to_highlevel, check_api_connection
+from sync.models import SyncLog
 
 # Set up Django environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "your_project.settings")
@@ -339,77 +340,96 @@ def run(test_mode=False):
     Run the sync process. If test_mode is True, only process a small batch of contacts
     and provide more detailed logging.
     """
-    if test_mode:
-        logger.setLevel(logging.INFO)
-        logger.info("Running in test mode with increased verbosity")
-    else:
-        logger.setLevel(logging.WARNING)
+    sync_log = SyncLog.objects.create()
 
-    # Check HighLevel API connection
-    logger.info("Checking HighLevel API connection...")
-    if not check_api_connection():
-        logger.error("HighLevel API connection failed. Aborting sync process.")
-        return
+    try:
+        if test_mode:
+            logger.setLevel(logging.INFO)
+            logger.info("Running in test mode with increased verbosity")
+        else:
+            logger.setLevel(logging.WARNING)
 
-    logger.info("HighLevel API connection successful. Proceeding with sync process.")
+        # Check HighLevel API connection
+        logger.info("Checking HighLevel API connection...")
+        if not check_api_connection():
+            logger.error("HighLevel API connection failed. Aborting sync process.")
+            sync_log.status = 'Failed'
+            sync_log.error_message = 'HighLevel API connection failed.'
+            sync_log.end_time = timezone.now()
+            sync_log.save()
+            return
 
-    base_url = os.environ.get("ACTIVECAMPAIGN_URL")
-    if not base_url.startswith("https://"):
-        base_url = f"https://{base_url}"
-    base_url += ".api-us1.com/api/3"
-    
-    api_key = os.environ.get("ACTIVECAMPAIGN_KEY")
-    
-    headers = {
-        "Api-Token": api_key,
-        "Content-Type": "application/json"
-    }
+        logger.info("HighLevel API connection successful. Proceeding with sync process.")
 
-    # Step 1: Sync pipelines and stages
-    logger.info("Syncing pipelines and stages...")
-    sync_pipelines_and_stages(base_url, headers)
-    logger.info("Pipelines and stages sync completed.")
+        base_url = os.environ.get("ACTIVECAMPAIGN_URL")
+        if not base_url.startswith("https://"):
+            base_url = f"https://{base_url}"
+        base_url += ".api-us1.com/api/3"
+        
+        api_key = os.environ.get("ACTIVECAMPAIGN_KEY")
+        
+        headers = {
+            "Api-Token": api_key,
+            "Content-Type": "application/json"
+        }
 
-    # Step 2-3: Process contacts, deals, and custom fields
-    logger.info("Processing contacts, deals, and custom fields...")
-    processed_contacts = get_and_process_activecampaign_contacts(limit=100 if test_mode else None, test_mode=test_mode)
-    
-    final_count = Contact.objects.count()
-    logger.info(f"\nProcessed and stored {processed_contacts} contacts from ActiveCampaign")
-    logger.info(f"Total contacts in database: {final_count}")
+        # Step 1: Sync pipelines and stages
+        logger.info("Syncing pipelines and stages...")
+        sync_pipelines_and_stages(base_url, headers)
+        logger.info("Pipelines and stages sync completed.")
 
-    # Sync contacts to HighLevel
-    logger.info("\nSyncing contacts to HighLevel...")
-    synced_contacts = sync_all_contacts_to_highlevel(limit=100 if test_mode else None, test_mode=test_mode)
+        # Step 2-3: Process contacts, deals, and custom fields
+        logger.info("Processing contacts, deals, and custom fields...")
+        processed_contacts = get_and_process_activecampaign_contacts(limit=100 if test_mode else None, test_mode=test_mode)
+        
+        sync_log.contacts_attempted = processed_contacts
+        final_count = Contact.objects.count()
+        logger.info(f"\nProcessed and stored {processed_contacts} contacts from ActiveCampaign")
+        logger.info(f"Total contacts in database: {final_count}")
 
-    if test_mode and synced_contacts:
-        # Verify contacts in HighLevel
-        logger.info("\nVerifying contacts in HighLevel...")
-        for contact in synced_contacts:
-            if contact.hl_id:
-                highlevel_contact = get_contact_from_highlevel(contact.hl_id)
-                if highlevel_contact:
-                    try:
-                        logger.info(f"Contact verified in HighLevel: {highlevel_contact['contact']['firstName']} {highlevel_contact['contact']['lastName']} (ID: {contact.hl_id})")
-                        
-                        # Add links to ActiveCampaign and HighLevel UIs
-                        ac_url = f"https://{os.environ.get('ACTIVECAMPAIGN_URL')}.activehosted.com/app/contacts/{contact.ac_id}"
-                        hl_url = f"https://app.gohighlevel.com/location/{os.environ.get('HIGHLEVEL_LOCATION_ID')}/contacts/{contact.hl_id}"
-                        
-                        logger.info(f"ActiveCampaign UI: {ac_url}")
-                        logger.info(f"HighLevel UI: {hl_url}")
-                    except KeyError:
-                        logger.warning(f"Contact found in HighLevel but with unexpected structure: {contact.first_name} {contact.last_name} (ID: {contact.hl_id})")
-                        logger.debug(f"HighLevel response: {highlevel_contact}")
+        # Sync contacts to HighLevel
+        logger.info("\nSyncing contacts to HighLevel...")
+        synced_contacts = sync_all_contacts_to_highlevel(limit=100 if test_mode else None, test_mode=test_mode)
+
+        sync_log.contacts_synced = len(synced_contacts)
+        sync_log.status = 'Completed'
+        sync_log.end_time = timezone.now()
+        sync_log.save()
+
+        if test_mode and synced_contacts:
+            # Verify contacts in HighLevel
+            logger.info("\nVerifying contacts in HighLevel...")
+            for contact in synced_contacts:
+                if contact.hl_id:
+                    highlevel_contact = get_contact_from_highlevel(contact.hl_id)
+                    if highlevel_contact:
+                        try:
+                            logger.info(f"Contact verified in HighLevel: {highlevel_contact['contact']['firstName']} {highlevel_contact['contact']['lastName']} (ID: {contact.hl_id})")
+                            
+                            # Add links to ActiveCampaign and HighLevel UIs
+                            ac_url = f"https://{os.environ.get('ACTIVECAMPAIGN_URL')}.activehosted.com/app/contacts/{contact.ac_id}"
+                            hl_url = f"https://app.gohighlevel.com/location/{os.environ.get('HIGHLEVEL_LOCATION_ID')}/contacts/{contact.hl_id}"
+                            
+                            logger.info(f"ActiveCampaign UI: {ac_url}")
+                            logger.info(f"HighLevel UI: {hl_url}")
+                        except KeyError:
+                            logger.warning(f"Contact found in HighLevel but with unexpected structure: {contact.first_name} {contact.last_name} (ID: {contact.hl_id})")
+                            logger.debug(f"HighLevel response: {highlevel_contact}")
+                    else:
+                        logger.warning(f"Contact not found in HighLevel: {contact.first_name} {contact.last_name} (ID: {contact.hl_id})")
                 else:
-                    logger.warning(f"Contact not found in HighLevel: {contact.first_name} {contact.last_name} (ID: {contact.hl_id})")
-            else:
-                logger.warning(f"Contact has no HighLevel ID: {contact.first_name} {contact.last_name}")
+                    logger.warning(f"Contact has no HighLevel ID: {contact.first_name} {contact.last_name}")
 
-    elif test_mode:
-        logger.warning("No contacts were synced to HighLevel.")
+        elif test_mode:
+            logger.warning("No contacts were synced to HighLevel.")
 
-    logger.info("\nContact sync completed.")
+        logger.info("\nContact sync completed.")
+    except Exception as e:
+        sync_log.status = 'Failed'
+        sync_log.error_message = str(e)
+        sync_log.end_time = timezone.now()
+        sync_log.save()
+        logger.error(f"Sync process failed: {e}")
 
 
 if __name__ == "__main__":

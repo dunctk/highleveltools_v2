@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sync Logs</title>
+</head>
+<body>
+    <h1>Sync Logs</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Contacts Attempted</th>
+                <th>Contacts Synced</th>
+                <th>Status</th>
+                <th>Error Message</th>
+                <th>Time Taken</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in sync_logs %}
+            <tr>
+                <td>{{ log.start_time }}</td>
+                <td>{{ log.end_time }}</td>
+                <td>{{ log.contacts_attempted }}</td>
+                <td>{{ log.contacts_synced }}</td>
+                <td>{{ log.status }}</td>
+                <td>{{ log.error_message }}</td>
+                <td>{{ log.time_taken }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
