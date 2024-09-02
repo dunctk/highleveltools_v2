@@ -2,7 +2,8 @@ import os
 import requests
 from dotenv import load_dotenv
 from django.conf import settings
-from .models import Contact, ContactCustomField, CustomField
+from .models import Contact, ContactCustomField, CustomField, SyncLog
+from django.utils import timezone
 from tqdm import tqdm
 
 load_dotenv()
@@ -86,12 +87,27 @@ def sync_all_contacts_to_highlevel(limit=None, test_mode=False):
     if limit:
         contacts = contacts[:limit]
     
-    for contact in tqdm(contacts):
+    # Create a new SyncLog entry
+    sync_log = SyncLog.objects.create()
+    
+    synced_contacts = []
+    for contact in tqdm(contacts, desc="Syncing contacts to HighLevel"):
         if test_mode:
             print(f"Syncing contact to HighLevel: {contact.first_name} {contact.last_name} (ID: {contact.ac_id})")
-        sync_contact_to_highlevel(contact)
+        
+        sync_log.contacts_attempted += 1
+        if sync_contact_to_highlevel(contact):
+            synced_contacts.append(contact)
+            sync_log.contacts_synced += 1
+        
+        sync_log.save()  # Save the progress
     
-    return contacts
+    # Update the SyncLog entry
+    sync_log.end_time = timezone.now()
+    sync_log.status = 'Completed'
+    sync_log.save()
+    
+    return synced_contacts
 
 
 if __name__ == "__main__":

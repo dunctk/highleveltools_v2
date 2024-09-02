@@ -14,6 +14,7 @@ from requests_ratelimiter import LimiterSession
 import logging
 from ..highlevel_sync import sync_all_contacts_to_highlevel, check_api_connection
 from sync.models import SyncLog
+from django.utils import timezone
 
 # Set up Django environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "your_project.settings")
