@@ -257,7 +257,7 @@ def get_and_process_activecampaign_contacts(limit=None, test_mode=False):
         for contact in contacts:
             try:
                 with transaction.atomic():
-                    processed_contact = process_contact(contact)
+                    processed_contact = process_contact(contact) 
                 processed_contacts += 1
                 pbar.update(1)
                 if test_mode:
