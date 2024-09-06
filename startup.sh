@@ -14,6 +14,12 @@ if [ "$APP_ENV" = 'web' ]; then
     python manage.py migrate django_celery_beat
     #python manage.py djstripe_sync_models
     python manage.py collectstatic --no-input
+
+    # Create schedules
+    python manage.py runscript scheduler
+
+    # Start qcluster in the background
+    python manage.py qcluster &
     gunicorn --bind=0.0.0.0:80 --timeout 600 --workers=4 --chdir hltools hltools.wsgi --access-logfile '-' --error-logfile '-'
 elif [ "$APP_ENV" = 'worker' ]; then
     celery -A hltools worker -l info 

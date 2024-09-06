@@ -18,3 +18,4 @@ django-celery-beat
 celery
 whitenoise
 sqlalchemy
+django-q2
