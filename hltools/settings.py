@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_q',
     'django_celery_beat',
     'sync.apps.SyncConfig',
     'django_extensions',
@@ -166,4 +167,18 @@ LOGGING = {
             'propagate': False,
         },
     },
+}
+
+
+Q_CLUSTER = {
+    'name': 'hltools',
+    'workers': 4,
+    'recycle': 500,
+    'timeout': 60,
+    'compress': True,
+    'save_limit': 250,
+    'queue_limit': 500,
+    'cpu_affinity': 1,
+    'label': 'Django Q',
+    'orm': 'default',  # This tells Django Q to use the default database
 }
