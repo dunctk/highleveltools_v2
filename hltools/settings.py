@@ -174,7 +174,7 @@ Q_CLUSTER = {
     'name': 'hltools',
     'workers': 4,
     'recycle': 500,
-    'timeout': 60,
+    'timeout': 82800,
     'compress': True,
     'save_limit': 250,
     'queue_limit': 500,
