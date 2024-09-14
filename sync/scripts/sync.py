@@ -338,65 +338,67 @@ def run():
     """
     Run the sync process.
     """
-    sync_log = SyncLog.objects.create()
+    sync_log = SyncLog.objects.create(status='In Progress', start_time=timezone.now())
 
     try:
-        logger.setLevel(logging.WARNING)
+        with transaction.atomic():
+            logger.setLevel(logging.WARNING)
 
-        # Check HighLevel API connection
-        logger.info("Checking HighLevel API connection...")
-        if not check_api_connection():
-            logger.error("HighLevel API connection failed. Aborting sync process.")
-            sync_log.status = 'Failed'
-            sync_log.error_message = 'HighLevel API connection failed.'
+            # Check HighLevel API connection
+            logger.info("Checking HighLevel API connection...")
+            if not check_api_connection():
+                raise Exception("HighLevel API connection failed.")
+
+            logger.info("HighLevel API connection successful. Proceeding with sync process.")
+
+            base_url = os.environ.get("ACTIVECAMPAIGN_URL")
+            if not base_url.startswith("https://"):
+                base_url = f"https://{base_url}"
+            base_url += ".api-us1.com/api/3"
+            
+            api_key = os.environ.get("ACTIVECAMPAIGN_KEY")
+            
+            headers = {
+                "Api-Token": api_key,
+                "Content-Type": "application/json"
+            }
+
+            # Step 1: Sync pipelines and stages
+            logger.info("Syncing pipelines and stages...")
+            sync_pipelines_and_stages(base_url, headers)
+            logger.info("Pipelines and stages sync completed.")
+
+            # Step 2-3: Process contacts, deals, and custom fields
+            logger.info("Processing contacts, deals, and custom fields...")
+            processed_contacts = get_and_process_activecampaign_contacts()
+            
+            sync_log.contacts_attempted = processed_contacts
+            final_count = Contact.objects.count()
+            logger.info(f"\nProcessed and stored {processed_contacts} contacts from ActiveCampaign")
+            logger.info(f"Total contacts in database: {final_count}")
+
+            # Sync contacts to HighLevel
+            logger.info("\nSyncing contacts to HighLevel...")
+            synced_contacts = sync_all_contacts_to_highlevel()
+
+            sync_log.contacts_synced = len(synced_contacts)
+            sync_log.status = 'Completed'
             sync_log.end_time = timezone.now()
             sync_log.save()
-            return
 
-        logger.info("HighLevel API connection successful. Proceeding with sync process.")
-
-        base_url = os.environ.get("ACTIVECAMPAIGN_URL")
-        if not base_url.startswith("https://"):
-            base_url = f"https://{base_url}"
-        base_url += ".api-us1.com/api/3"
-        
-        api_key = os.environ.get("ACTIVECAMPAIGN_KEY")
-        
-        headers = {
-            "Api-Token": api_key,
-            "Content-Type": "application/json"
-        }
-
-        # Step 1: Sync pipelines and stages
-        logger.info("Syncing pipelines and stages...")
-        sync_pipelines_and_stages(base_url, headers)
-        logger.info("Pipelines and stages sync completed.")
-
-        # Step 2-3: Process contacts, deals, and custom fields
-        logger.info("Processing contacts, deals, and custom fields...")
-        processed_contacts = get_and_process_activecampaign_contacts()
-        
-        sync_log.contacts_attempted = processed_contacts
-        final_count = Contact.objects.count()
-        logger.info(f"\nProcessed and stored {processed_contacts} contacts from ActiveCampaign")
-        logger.info(f"Total contacts in database: {final_count}")
-
-        # Sync contacts to HighLevel
-        logger.info("\nSyncing contacts to HighLevel...")
-        synced_contacts = sync_all_contacts_to_highlevel()
-
-        sync_log.contacts_synced = len(synced_contacts)
-        sync_log.status = 'Completed'
-        sync_log.end_time = timezone.now()
-        sync_log.save()
-
-        logger.info("\nContact sync completed.")
+            logger.info("\nContact sync completed.")
     except Exception as e:
         sync_log.status = 'Failed'
         sync_log.error_message = str(e)
         sync_log.end_time = timezone.now()
         sync_log.save()
         logger.error(f"Sync process failed: {e}")
+
+    finally:
+        if sync_log.status == 'In Progress':
+            sync_log.status = 'Interrupted'
+            sync_log.end_time = timezone.now()
+            sync_log.save()
 
 
 if __name__ == "__main__":
