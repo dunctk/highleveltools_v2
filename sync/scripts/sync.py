@@ -439,5 +439,5 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true", help="Run in test mode with a small batch of contacts")
     args = parser.parse_args()
 
-    run(test_mode=args.test)
+    run()
 

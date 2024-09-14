@@ -13,7 +13,7 @@ def create_schedules():
     broker = get_broker()
     broker.purge_queue()
 
-    # Schedule the generate_images_for_all_subcategories function to run every hour
+    # Schedule the sync process to run once a day
     schedule(
         'sync.scripts.sync.run',
         schedule_type=Schedule.DAILY,
