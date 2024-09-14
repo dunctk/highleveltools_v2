@@ -23,4 +23,4 @@ for model in models:
 # Remove the specific PipeLine registration
 # @admin.register(PipeLine)
 # class YourModelAdmin(admin.ModelAdmin):
-#     actions = [run_sync_script]
+#     actions = [run_sync_script] 
