@@ -221,7 +221,7 @@ def process_contact(contact):
 
     return contact_obj
 
-def get_and_process_activecampaign_contacts(limit=None, test_mode=False):
+def get_and_process_activecampaign_contacts(limit=None):
     base_url = os.environ.get("ACTIVECAMPAIGN_URL")
     if not base_url.startswith("https://"):
         base_url = f"https://{base_url}"
@@ -260,8 +260,6 @@ def get_and_process_activecampaign_contacts(limit=None, test_mode=False):
                     processed_contact = process_contact(contact) 
                 processed_contacts += 1
                 pbar.update(1)
-                if test_mode:
-                    logger.info(f"Processed contact: {processed_contact.first_name} {processed_contact.last_name} (ID: {processed_contact.ac_id})")
             except Exception as e:
                 logger.error(f"Error processing contact: {e}")
         
@@ -336,19 +334,14 @@ def get_contact_from_highlevel(contact_id):
         return None
 
 
-def run(test_mode=False):
+def run():
     """
-    Run the sync process. If test_mode is True, only process a small batch of contacts
-    and provide more detailed logging.
+    Run the sync process.
     """
     sync_log = SyncLog.objects.create()
 
     try:
-        if test_mode:
-            logger.setLevel(logging.INFO)
-            logger.info("Running in test mode with increased verbosity")
-        else:
-            logger.setLevel(logging.WARNING)
+        logger.setLevel(logging.WARNING)
 
         # Check HighLevel API connection
         logger.info("Checking HighLevel API connection...")
@@ -381,7 +374,7 @@ def run(test_mode=False):
 
         # Step 2-3: Process contacts, deals, and custom fields
         logger.info("Processing contacts, deals, and custom fields...")
-        processed_contacts = get_and_process_activecampaign_contacts(limit=100 if test_mode else None, test_mode=test_mode)
+        processed_contacts = get_and_process_activecampaign_contacts()
         
         sync_log.contacts_attempted = processed_contacts
         final_count = Contact.objects.count()
@@ -390,39 +383,12 @@ def run(test_mode=False):
 
         # Sync contacts to HighLevel
         logger.info("\nSyncing contacts to HighLevel...")
-        synced_contacts = sync_all_contacts_to_highlevel(limit=100 if test_mode else None, test_mode=test_mode)
+        synced_contacts = sync_all_contacts_to_highlevel()
 
         sync_log.contacts_synced = len(synced_contacts)
         sync_log.status = 'Completed'
         sync_log.end_time = timezone.now()
         sync_log.save()
-
-        if test_mode and synced_contacts:
-            # Verify contacts in HighLevel
-            logger.info("\nVerifying contacts in HighLevel...")
-            for contact in synced_contacts:
-                if contact.hl_id:
-                    highlevel_contact = get_contact_from_highlevel(contact.hl_id)
-                    if highlevel_contact:
-                        try:
-                            logger.info(f"Contact verified in HighLevel: {highlevel_contact['contact']['firstName']} {highlevel_contact['contact']['lastName']} (ID: {contact.hl_id})")
-                            
-                            # Add links to ActiveCampaign and HighLevel UIs
-                            ac_url = f"https://{os.environ.get('ACTIVECAMPAIGN_URL')}.activehosted.com/app/contacts/{contact.ac_id}"
-                            hl_url = f"https://app.gohighlevel.com/location/{os.environ.get('HIGHLEVEL_LOCATION_ID')}/contacts/{contact.hl_id}"
-                            
-                            logger.info(f"ActiveCampaign UI: {ac_url}")
-                            logger.info(f"HighLevel UI: {hl_url}")
-                        except KeyError:
-                            logger.warning(f"Contact found in HighLevel but with unexpected structure: {contact.first_name} {contact.last_name} (ID: {contact.hl_id})")
-                            logger.debug(f"HighLevel response: {highlevel_contact}")
-                    else:
-                        logger.warning(f"Contact not found in HighLevel: {contact.first_name} {contact.last_name} (ID: {contact.hl_id})")
-                else:
-                    logger.warning(f"Contact has no HighLevel ID: {contact.first_name} {contact.last_name}")
-
-        elif test_mode:
-            logger.warning("No contacts were synced to HighLevel.")
 
         logger.info("\nContact sync completed.")
     except Exception as e:
@@ -434,10 +400,5 @@ def run(test_mode=False):
 
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Run the ActiveCampaign to HighLevel sync process.")
-    parser.add_argument("--test", action="store_true", help="Run in test mode with a small batch of contacts")
-    args = parser.parse_args()
-
     run()
 
