@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+    {% if show_sync_button %}
+    <li>
+        <a href="{% url 'admin:run-sync-script' %}" class="button">Run Sync Script</a>
+    </li>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}
