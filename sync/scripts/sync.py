@@ -344,7 +344,7 @@ def run():
             logger.info("HighLevel API connection successful. Proceeding with sync process.")
 
             base_url = os.environ.get("ACTIVECAMPAIGN_URL")
-            if not base_url.startswith("https://"):
+            if not base_url.startswith("https://")
                 base_url = f"https://{base_url}"
             base_url += ".api-us1.com/api/3"
             
@@ -404,7 +404,7 @@ def sync_contact_to_highlevel(contact_id):
         # Implement the logic to sync this contact to HighLevel
         # You can use your existing sync_contact_to_highlevel function here
         # For example:
-        # sync_result = sync_contact_to_highlevel(contact)
+        sync_result = sync_contact_to_highlevel(contact)
         logger.info(f"Successfully synced contact {contact_id} to HighLevel")
     except Exception as e:
         logger.error(f"Failed to sync contact {contact_id} to HighLevel: {str(e)}")
