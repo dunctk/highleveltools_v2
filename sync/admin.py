@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.core.management import call_command
 from django.contrib import messages
 from django.urls import path
+from django.shortcuts import redirect
+from django_q.tasks import async_task
 from .models import PipeLine, SyncLog
 
 @admin.action(description="Run sync script")
@@ -25,12 +27,10 @@ class SyncLogAdmin(admin.ModelAdmin):
         return custom_urls + urls
     
     def run_sync_script_view(self, request):
-        try:
-            call_command('runscript', 'sync')
-            messages.success(request, "Sync script ran successfully")
-        except Exception as e:
-            messages.error(request, f"Error running sync script: {str(e)}")
-        return self.changelist_view(request)
+        # Schedule the task
+        task_id = async_task('sync.scripts.sync.run')
+        messages.success(request, f"Sync script scheduled (Task ID: {task_id})")
+        return redirect('admin:sync_synclog_changelist')
     
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
