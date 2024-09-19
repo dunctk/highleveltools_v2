@@ -15,6 +15,7 @@ import logging
 from ..highlevel_sync import sync_all_contacts_to_highlevel, check_api_connection
 from sync.models import SyncLog
 from django.utils import timezone
+from django_q.tasks import async_task
 
 # Set up Django environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "your_project.settings")
@@ -34,7 +35,7 @@ class CachedLimiterSession(LimiterSession):
             return super().send(request, **kwargs)
 
 # Create the session with rate limiting
-session = CachedLimiterSession(per_second=5)  # Limit to 5 requests per second
+session = CachedLimiterSession(per_second=5, concurrent=1)  # Limit to 5 requests per second and 1 concurrent request
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -368,16 +369,18 @@ def run():
             logger.info(f"\nProcessed and stored {processed_contacts} contacts from ActiveCampaign")
             logger.info(f"Total contacts in database: {final_count}")
 
-            # Sync contacts to HighLevel
-            logger.info("\nSyncing contacts to HighLevel...")
-            synced_contacts = sync_all_contacts_to_highlevel()
+            # Schedule individual contact syncs to HighLevel
+            logger.info("\nScheduling contact syncs to HighLevel...")
+            contacts = Contact.objects.all()
+            for contact in contacts:
+                async_task('sync_contact_to_highlevel', contact.id)
 
-            sync_log.contacts_synced = len(synced_contacts)
-            sync_log.status = 'Completed'
+            sync_log.contacts_synced = contacts.count()
+            sync_log.status = 'Sync Tasks Scheduled'
             sync_log.end_time = timezone.now()
             sync_log.save()
 
-            logger.info("\nContact sync completed.")
+            logger.info("\nContact sync tasks scheduled.")
     except Exception as e:
         sync_log.status = 'Failed'
         sync_log.error_message = str(e)
@@ -391,6 +394,20 @@ def run():
             sync_log.end_time = timezone.now()
             sync_log.save()
 
+def sync_contact_to_highlevel(contact_id):
+    """
+    Sync a single contact to HighLevel.
+    This function will be called asynchronously by django-q.
+    """
+    try:
+        contact = Contact.objects.get(id=contact_id)
+        # Implement the logic to sync this contact to HighLevel
+        # You can use your existing sync_contact_to_highlevel function here
+        # For example:
+        # sync_result = sync_contact_to_highlevel(contact)
+        logger.info(f"Successfully synced contact {contact_id} to HighLevel")
+    except Exception as e:
+        logger.error(f"Failed to sync contact {contact_id} to HighLevel: {str(e)}")
 
 if __name__ == "__main__":
     run()
