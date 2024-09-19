@@ -22,6 +22,7 @@ django.setup()
 
 from sync.models import Contact, CustomField, ContactCustomField, Deal, DealStage, PipeLine  # Import your Contact model
 
+
 # Load environment variables and set up request caching
 load_dotenv()
 requests_cache.install_cache('activecampaign_cache', expire_after=timedelta(hours=24))
@@ -135,89 +136,80 @@ def get_contact_deals(base_url, headers, contact_id, use_retry=True):
         return []
 
 def process_contact(contact):
-    contact_obj, created = Contact.objects.update_or_create(
-        ac_id=contact['id'],
-        defaults={
-            'email': contact.get('email'),
-            'first_name': contact.get('firstName'),
-            'last_name': contact.get('lastName'),
-            'ac_json': json.dumps(contact)
-        }
-    )
+    with transaction.atomic():
+        # Lock the contact object for update
+        contact_obj = Contact.objects.select_for_update().filter(ac_id=contact['id']).first()
+        
+        if contact_obj:
+            # Update existing contact
+            contact_obj.email = contact.get('email')
+            contact_obj.first_name = contact.get('firstName')
+            contact_obj.last_name = contact.get('lastName')
+            contact_obj.ac_json = json.dumps(contact)
+            contact_obj.save()
+        else:
+            # Create new contact
+            contact_obj = Contact.objects.create(
+                ac_id=contact['id'],
+                email=contact.get('email'),
+                first_name=contact.get('firstName'),
+                last_name=contact.get('lastName'),
+                ac_json=json.dumps(contact)
+            )
 
-    # Process custom fields
-    for field in contact.get('custom_fields', []):
-        custom_field, _ = CustomField.objects.update_or_create(
-            ac_id=field['field'],
-            defaults={
-                'type': field.get('fieldType', ''),
-                'ac_title': field.get('fieldTitle', ''),
-                'ac_json': json.dumps(field)
-            }
-        )
+        # Process custom fields
+        for field in contact.get('custom_fields', []):
+            custom_field = CustomField.objects.select_for_update().get_or_create(
+                ac_id=field['field'],
+                defaults={
+                    'type': field.get('fieldType', ''),
+                    'ac_title': field.get('fieldTitle', ''),
+                    'ac_json': json.dumps(field)
+                }
+            )[0]
 
-        ContactCustomField.objects.update_or_create(
-            contact=contact_obj,
-            custom_field=custom_field,
-            defaults={
-                'value': field.get('value', '')
-            }
-        )
+            ContactCustomField.objects.update_or_create(
+                contact=contact_obj,
+                custom_field=custom_field,
+                defaults={
+                    'value': field.get('value', '')
+                }
+            )
 
-    # Process deals
-    for deal in contact.get('deals', []):
-        # Fetch or create the pipeline
-        pipeline_id = deal.get('pipeline') or deal.get('group') or deal.get('dealGroup')
-        if not pipeline_id:
-            print(f"Warning: Deal {deal.get('id')} has no pipeline ID. Attempting to use default pipeline.")
-            default_pipeline = PipeLine.objects.first()
-            if default_pipeline:
-                pipeline_id = default_pipeline.ac_id
-            else:
-                print(f"Error: No default pipeline found. Skipping deal {deal.get('id')}.")
-                continue
+        # Process deals
+        for deal in contact.get('deals', []):
+            # Fetch or create the pipeline
+            pipeline = PipeLine.objects.select_for_update().get_or_create(
+                ac_id=deal.get('pipeline') or deal.get('group') or deal.get('dealGroup'),
+                defaults={
+                    'name': deal.get('pipeline_title') or deal.get('group_title') or 'Unknown Pipeline',
+                    'ac_json': json.dumps(deal.get('pipeline', {}))
+                }
+            )[0]
 
-        pipeline, _ = PipeLine.objects.get_or_create(
-            ac_id=pipeline_id,
-            defaults={
-                'name': deal.get('pipeline_title') or deal.get('group_title') or 'Unknown Pipeline',
-                'ac_json': json.dumps(deal.get('pipeline', {}))
-            }
-        )
+            # Fetch or create the deal stage
+            stage = DealStage.objects.select_for_update().get_or_create(
+                ac_id=deal.get('stage'),
+                defaults={
+                    'name': deal.get('stage_title', 'Unknown Stage'),
+                    'pipeline': pipeline,
+                    'ac_json': deal.get('stage', {})
+                }
+            )[0]
 
-        # Fetch or create the deal stage
-        stage_id = deal.get('stage')
-        if not stage_id:
-            print(f"Warning: Deal {deal.get('id')} has no stage ID. Using default stage.")
-            default_stage = DealStage.objects.filter(pipeline=pipeline).first()
-            if default_stage:
-                stage_id = default_stage.ac_id
-            else:
-                print(f"Error: No default stage found for pipeline {pipeline.name}. Skipping deal {deal.get('id')}.")
-                continue
-
-        stage, _ = DealStage.objects.get_or_create(
-            ac_id=stage_id,
-            defaults={
-                'name': deal.get('stage_title', 'Unknown Stage'),
-                'pipeline': pipeline,
-                'ac_json': deal.get('stage', {})
-            }
-        )
-
-        Deal.objects.update_or_create(
-            ac_id=deal['id'],
-            defaults={
-                'contact': contact_obj,
-                'stage': stage,
-                'title': deal.get('title', 'Untitled Deal'),
-                'value': deal.get('value'),
-                'currency': deal.get('currency', 'USD'),
-                'created_date': parse_datetime(deal.get('cdate')),
-                'updated_date': parse_datetime(deal.get('mdate')),
-                'ac_json': json.dumps(deal)
-            }
-        )
+            Deal.objects.update_or_create(
+                ac_id=deal['id'],
+                defaults={
+                    'contact': contact_obj,
+                    'stage': stage,
+                    'title': deal.get('title', 'Untitled Deal'),
+                    'value': deal.get('value'),
+                    'currency': deal.get('currency', 'USD'),
+                    'created_date': parse_datetime(deal.get('cdate')),
+                    'updated_date': parse_datetime(deal.get('mdate')),
+                    'ac_json': json.dumps(deal)
+                }
+            )
 
     return contact_obj
 
@@ -256,8 +248,7 @@ def get_and_process_activecampaign_contacts(limit=None):
         
         for contact in contacts:
             try:
-                with transaction.atomic():
-                    processed_contact = process_contact(contact) 
+                processed_contact = process_contact(contact) 
                 processed_contacts += 1
                 pbar.update(1)
             except Exception as e:

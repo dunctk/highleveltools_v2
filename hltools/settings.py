@@ -87,6 +87,15 @@ if 'CAPROVER' in os.environ:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': '/persistent/db.sqlite3',
+            'OPTIONS': {
+                'timeout': 20,  # in seconds
+                'pragmas': [
+                    'journal_mode=WAL',
+                    'synchronous=NORMAL',
+                    'cache_size=-64000',  # 64MB
+                    'foreign_keys=ON',
+                ],
+            },
         }
     }
 else:
