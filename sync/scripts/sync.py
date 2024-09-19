@@ -344,7 +344,7 @@ def run():
             logger.info("HighLevel API connection successful. Proceeding with sync process.")
 
             base_url = os.environ.get("ACTIVECAMPAIGN_URL")
-            if not base_url.startswith("https://")
+            if not base_url.startswith("https://"):
                 base_url = f"https://{base_url}"
             base_url += ".api-us1.com/api/3"
             
