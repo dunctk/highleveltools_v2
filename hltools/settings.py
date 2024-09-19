@@ -89,12 +89,6 @@ if 'CAPROVER' in os.environ:
             'NAME': '/persistent/db.sqlite3',
             'OPTIONS': {
                 'timeout': 20,  # in seconds
-                'pragmas': [
-                    'journal_mode=WAL',
-                    'synchronous=NORMAL',
-                    'cache_size=-64000',  # 64MB
-                    'foreign_keys=ON',
-                ],
             },
         }
     }
@@ -105,6 +99,7 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
 
 
 # Password validation

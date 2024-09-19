@@ -8,6 +8,8 @@ class SyncConfig(AppConfig):
     name = 'sync'
 
     def ready(self):
+        import sync.db_signals
         logger.info("SyncConfig ready method called")
         import sync.signals  # This imports the signals
         logger.info("Signals imported")
+        
