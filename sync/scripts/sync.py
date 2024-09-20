@@ -12,7 +12,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 import time
 from requests_ratelimiter import LimiterSession
 import logging
-from ..highlevel_sync import sync_all_contacts_to_highlevel, check_api_connection
+from ..highlevel_sync import sync_contact_to_highlevel as highlevel_sync
 from sync.models import SyncLog
 from django.utils import timezone
 from django_q.tasks import async_task
@@ -401,10 +401,8 @@ def sync_contact_to_highlevel(contact_id):
     """
     try:
         contact = Contact.objects.get(id=contact_id)
-        # Implement the logic to sync this contact to HighLevel
-        # You can use your existing sync_contact_to_highlevel function here
-        # For example:
-        sync_result = sync_contact_to_highlevel(contact)
+        # Use the imported function from highlevel_sync
+        sync_result = highlevel_sync(contact)
         logger.info(f"Successfully synced contact {contact_id} to HighLevel")
     except Exception as e:
         logger.error(f"Failed to sync contact {contact_id} to HighLevel: {str(e)}")
