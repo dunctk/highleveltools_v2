@@ -15,7 +15,7 @@ import logging
 from ..highlevel_sync import sync_contact_to_highlevel as highlevel_sync
 from sync.models import SyncLog
 from django.utils import timezone
-from django_q.tasks import async_task
+from celery import shared_task
 
 # Set up Django environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "your_project.settings")
@@ -326,6 +326,7 @@ def get_contact_from_highlevel(contact_id):
         return None
 
 
+@shared_task(name='sync.run_sync_script')
 def run():
     """
     Run the sync process.
@@ -373,7 +374,7 @@ def run():
             logger.info("\nScheduling contact syncs to HighLevel...")
             contacts = Contact.objects.all()
             for contact in contacts:
-                async_task('sync_contact_to_highlevel', contact.id)
+                sync_contact_to_highlevel.delay(contact.id)
 
             sync_log.contacts_synced = contacts.count()
             sync_log.status = 'Sync Tasks Scheduled'
@@ -394,10 +395,11 @@ def run():
             sync_log.end_time = timezone.now()
             sync_log.save()
 
+@shared_task(name='sync.sync_contact_to_highlevel')
 def sync_contact_to_highlevel(contact_id):
     """
     Sync a single contact to HighLevel.
-    This function will be called asynchronously by django-q.
+    This function will be called asynchronously by Celery.
     """
     try:
         contact = Contact.objects.get(id=contact_id)
@@ -408,5 +410,5 @@ def sync_contact_to_highlevel(contact_id):
         logger.error(f"Failed to sync contact {contact_id} to HighLevel: {str(e)}")
 
 if __name__ == "__main__":
-    run()
+    run.delay()
 

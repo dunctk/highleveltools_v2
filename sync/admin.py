@@ -28,8 +28,8 @@ class SyncLogAdmin(admin.ModelAdmin):
     
     def run_sync_script_view(self, request):
         # Schedule the task
-        task_id = async_task('sync.scripts.sync.run')
-        messages.success(request, f"Sync script scheduled (Task ID: {task_id})")
+        task = run.delay()
+        messages.success(request, f"Sync script scheduled (Task ID: {task.id})")
         return redirect('admin:sync_synclog_changelist')
     
     def changelist_view(self, request, extra_context=None):
