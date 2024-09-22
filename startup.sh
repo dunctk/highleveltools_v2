@@ -18,9 +18,7 @@ if [ "$APP_ENV" = 'web' ]; then
     # Create schedules
     python manage.py runscript scheduler
 
-    # Start qcluster in the background
-    python manage.py qcluster &
-    gunicorn --bind=0.0.0.0:80 --timeout 600 --workers=4 --chdir hltools hltools.wsgi --access-logfile '-' --error-logfile '-'
+    gunicorn --bind=0.0.0.0:80 --timeout 600 --workers=1 --chdir hltools hltools.wsgi --access-logfile '-' --error-logfile '-'
 elif [ "$APP_ENV" = 'worker' ]; then
     celery -A hltools worker -l info 
 elif [ "$APP_ENV" = 'beat' ]; then
