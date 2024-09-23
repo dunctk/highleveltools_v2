@@ -16,6 +16,7 @@ from ..highlevel_sync import sync_contact_to_highlevel as highlevel_sync
 from sync.models import SyncLog
 from django.utils import timezone
 from celery import shared_task
+from api_utils import check_api_connection  # Add this import at the top of the file
 
 # Set up Django environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "your_project.settings")

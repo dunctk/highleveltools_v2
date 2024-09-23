@@ -5,6 +5,7 @@ from django.urls import path
 from django.shortcuts import redirect
 from django_q.tasks import async_task
 from .models import PipeLine, SyncLog
+from sync.scripts.sync import run  # Add this import at the top of the file
 
 @admin.action(description="Run sync script")
 def run_sync_script(modeladmin, request, queryset):
