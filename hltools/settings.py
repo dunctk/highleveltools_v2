@@ -146,22 +146,20 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REDIS_PASSWORD="pineapple"
-REDIS_HOST="srv-captain--highleveltools-redis"
-REDIS_PORT="6379"
+REDIS_PASSWORD = "pineapple"
+REDIS_HOST = "srv-captain--highleveltools-redis"
+REDIS_PORT = "6379"
 
-CELERY_REDIS_BACKEND_USE_SSL = {
-    'ssl_cert_reqs': ssl.CERT_NONE
-}
-CELERY_REDIS_DB = os.environ.get("CELERY_REDIS_DB")
-CELERY_BROKER_URL = f"rediss://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_REDIS_DB}?ssl_cert_reqs=CERT_NONE"
+CELERY_REDIS_DB = os.environ.get("CELERY_REDIS_DB", "0")  # Default to 0 if not set
+CELERY_BROKER_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_REDIS_DB}"
+
 # Celery Configuration
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_CACHE_BACKEND = "django-cache"
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'  # Set this to your project's timezone
+CELERY_TIMEZONE = 'UTC'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 LOGGING = {
