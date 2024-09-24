@@ -12,7 +12,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 import time
 from requests_ratelimiter import LimiterSession
 import logging
-from ..highlevel_sync import sync_contact_to_highlevel as highlevel_sync
+from ..highlevel_sync import check_api_connection
 from sync.models import SyncLog
 from django.utils import timezone
 from celery import shared_task
