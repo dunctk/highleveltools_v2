@@ -1,6 +1,4 @@
 import os
-import django
-from django.db import transaction
 import requests
 import requests_cache
 from dotenv import load_dotenv
@@ -12,18 +10,13 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 import time
 from requests_ratelimiter import LimiterSession
 import logging
-from ..highlevel_sync import check_api_connection
-from sync.models import SyncLog
+from django.db import transaction
 from django.utils import timezone
 from celery import shared_task
-from api_utils import check_api_connection  # Add this import at the top of the file
 
-# Set up Django environment
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "your_project.settings")
-django.setup()
-
-from sync.models import Contact, CustomField, ContactCustomField, Deal, DealStage, PipeLine  # Import your Contact model
-
+# Move the imports that depend on Django here
+from sync.models import Contact, CustomField, ContactCustomField, Deal, DealStage, PipeLine, SyncLog
+from ..highlevel_sync import check_api_connection, sync_contact_to_highlevel
 
 # Load environment variables and set up request caching
 load_dotenv()
@@ -375,7 +368,7 @@ def run():
             logger.info("\nScheduling contact syncs to HighLevel...")
             contacts = Contact.objects.all()
             for contact in contacts:
-                sync_contact_to_highlevel.delay(contact.id)
+                sync_contact_to_highlevel_task.delay(contact.id)
 
             sync_log.contacts_synced = contacts.count()
             sync_log.status = 'Sync Tasks Scheduled'
@@ -396,8 +389,8 @@ def run():
             sync_log.end_time = timezone.now()
             sync_log.save()
 
-@shared_task(name='sync.sync_contact_to_highlevel')
-def sync_contact_to_highlevel(contact_id):
+@shared_task(name='sync.sync_contact_to_highlevel_task')
+def sync_contact_to_highlevel_task(contact_id):
     """
     Sync a single contact to HighLevel.
     This function will be called asynchronously by Celery.
@@ -405,11 +398,8 @@ def sync_contact_to_highlevel(contact_id):
     try:
         contact = Contact.objects.get(id=contact_id)
         # Use the imported function from highlevel_sync
-        sync_result = highlevel_sync(contact)
+        sync_result = sync_contact_to_highleve(contact)
         logger.info(f"Successfully synced contact {contact_id} to HighLevel")
     except Exception as e:
         logger.error(f"Failed to sync contact {contact_id} to HighLevel: {str(e)}")
-
-if __name__ == "__main__":
-    run.delay()
 
