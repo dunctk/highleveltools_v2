@@ -398,7 +398,7 @@ def sync_contact_to_highlevel_task(contact_id):
     try:
         contact = Contact.objects.get(id=contact_id)
         # Use the imported function from highlevel_sync
-        sync_result = sync_contact_to_highleve(contact)
+        sync_result = sync_contact_to_highlevel(contact)
         logger.info(f"Successfully synced contact {contact_id} to HighLevel")
     except Exception as e:
         logger.error(f"Failed to sync contact {contact_id} to HighLevel: {str(e)}")
