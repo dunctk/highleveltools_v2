@@ -112,6 +112,8 @@ pytz==2024.1
     # via pandas
 ratelimit==2.2.1
     # via -r requirements.in
+redis==5.0.8
+    # via -r requirements.in
 requests==2.32.1
     # via
     #   activecampaign-python

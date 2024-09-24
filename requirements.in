@@ -18,3 +18,4 @@ celery
 whitenoise
 sqlalchemy
 django-q2
+redis
