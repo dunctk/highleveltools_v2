@@ -231,15 +231,19 @@ def get_and_process_activecampaign_contacts(limit=None):
     if limit:
         total_contacts = min(limit, total_contacts)
     
-    limit = 100
-    num_pages = (total_contacts + limit - 1) // limit
+    page_limit = 100  # Define the number of contacts per API request
+    num_pages = (total_contacts + page_limit - 1) // page_limit
     
     pbar = tqdm(total=total_contacts, desc="Processing contacts", unit="contact")
     
     processed_contacts = 0
     
     for i in range(num_pages):
-        contacts = get_activecampaign_contacts_page(base_url, headers, {"limit": limit or 100, "offset": i * (limit or 100)})
+        contacts = get_activecampaign_contacts_page(
+            base_url, 
+            headers, 
+            {"limit": page_limit, "offset": i * page_limit}
+        )
         
         for contact in contacts:
             try:
@@ -249,8 +253,9 @@ def get_and_process_activecampaign_contacts(limit=None):
             except Exception as e:
                 logger.error(f"Error processing contact: {e}")
         
-        if limit and processed_contacts >= limit:
-            break
+        # Remove the break condition to allow processing all contacts
+        # if limit and processed_contacts >= limit:
+        #     break
     
     pbar.close()
     
